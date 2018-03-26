@@ -14,6 +14,8 @@ using Steepshot.Core.Models.Enums;
 using Steepshot.Core.Presenters;
 using Steepshot.Core.Localization;
 using Steepshot.Core.Utils;
+using AVFoundation;
+using AVKit;
 
 namespace Steepshot.iOS.Cells
 {
@@ -289,22 +291,45 @@ namespace Steepshot.iOS.Cells
             _bodyImage = new UIImageView[_currentPost.Media.Length];
             for (int i = 0; i < _currentPost.Media.Length; i++)
             {
-                _bodyImage[i] = new UIImageView();
-                _bodyImage[i].ClipsToBounds = true;
-                _bodyImage[i].UserInteractionEnabled = true;
-                _bodyImage[i].ContentMode = UIViewContentMode.ScaleAspectFill;
-                _bodyImage[i].Frame = new CGRect(UIScreen.MainScreen.Bounds.Width * i, 0, UIScreen.MainScreen.Bounds.Width, variables.PhotoHeight);
-                _photoScroll.AddSubview(_bodyImage[i]);
+                //_bodyImage[i] = new UIImageView();
+                //_bodyImage[i].ClipsToBounds = true;
+                //_bodyImage[i].UserInteractionEnabled = true;
+                //_bodyImage[i].ContentMode = UIViewContentMode.ScaleAspectFill;
+                //_bodyImage[i].Frame = new CGRect(UIScreen.MainScreen.Bounds.Width * i, 0, UIScreen.MainScreen.Bounds.Width, variables.PhotoHeight);
+                //_photoScroll.AddSubview(_bodyImage[i]);
 
-                _scheduledWorkBody[i] = ImageService.Instance.LoadUrl(_currentPost.Media[i].Url)
-                                             .Retry(2)
-                                             .FadeAnimation(false)
-                                             .WithCache(FFImageLoading.Cache.CacheType.All)
-                                             .WithPriority(LoadingPriority.Highest)
-                                             /* .DownloadProgress((f)=>
-                                            {
-                                            })*/
-                                              .Into(_bodyImage[i]);
+                //_scheduledWorkBody[i] = ImageService.Instance.LoadUrl("https://www.dropbox.com/s/isxzh1bg7ozgkhj/IMG_1259.mp4")//_currentPost.Media[i].Url)
+                //                             .Retry(2)
+                //                             .FadeAnimation(false)
+                //                             .WithCache(FFImageLoading.Cache.CacheType.All)
+                //                             .WithPriority(LoadingPriority.Highest)
+                //                             /* .DownloadProgress((f)=>
+                //                            {
+                //                            })*/
+                //                              .Into(_bodyImage[i]);
+
+                // "https://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4"
+                AVPlayer player;
+                AVPlayerLayer playerLayer;
+                AVAsset asset;
+                AVPlayerItem playerItem;
+                AVPlayerLooper playerLooper;
+
+                asset = AVAsset.FromUrl(NSUrl.FromString("https://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4"));
+                playerItem = new AVPlayerItem(asset);
+
+                player = new AVPlayer(playerItem);
+
+                playerLayer = AVPlayerLayer.FromPlayer(player);
+                playerLayer.Frame = new CGRect(UIScreen.MainScreen.Bounds.Width * i, 0, UIScreen.MainScreen.Bounds.Width, variables.PhotoHeight);
+                _photoScroll.Layer.AddSublayer(playerLayer);
+
+                NSNotificationCenter.DefaultCenter.AddObserver(AVPlayerItem.DidPlayToEndTimeNotification, (obj) =>
+                {
+                    player.Seek(CoreMedia.CMTime.Zero);
+                    player.Play();
+                    obj.Dispose();
+                }, player.CurrentItem);
             }
 
             if (_currentPost.TopLikersAvatars.Any() && !string.IsNullOrEmpty(_currentPost.TopLikersAvatars[0]))
