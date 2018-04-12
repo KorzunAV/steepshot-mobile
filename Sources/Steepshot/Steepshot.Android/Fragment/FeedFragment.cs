@@ -32,13 +32,17 @@ namespace Steepshot.Fragment
         private ScrollListener _scrollListner;
 
 #pragma warning disable 0649, 4014
-        [CheeseBind.BindView(Resource.Id.feed_list)] private RecyclerView _feedList;
-        [CheeseBind.BindView(Resource.Id.loading_spinner)] private ProgressBar _bar;
-        [CheeseBind.BindView(Resource.Id.feed_refresher)] private SwipeRefreshLayout _refresher;
-        [CheeseBind.BindView(Resource.Id.logo)] private ImageView _logo;
-        [CheeseBind.BindView(Resource.Id.app_bar)] private AppBarLayout _toolbar;
-        [CheeseBind.BindView(Resource.Id.empty_query_label)] private TextView _emptyQueryLabel;
-        [CheeseBind.BindView(Resource.Id.post_prev_pager)] private ViewPager _postPager;
+        [BindView(Resource.Id.feed_list)] private RecyclerView _feedList;
+        [BindView(Resource.Id.loading_spinner)] private ProgressBar _bar;
+        [BindView(Resource.Id.feed_refresher)] private SwipeRefreshLayout _refresher;
+        [BindView(Resource.Id.logo)] private ImageView _logo;
+        [BindView(Resource.Id.app_bar)] private AppBarLayout _toolbar;
+        [BindView(Resource.Id.empty_query_label)] private TextView _emptyQueryLabel;
+        [BindView(Resource.Id.post_prev_pager)] private ViewPager _postPager;
+        [BindView(Resource.Id.feed_container)] private RelativeLayout _feedContainer;
+        [BindView(Resource.Id.browse_button)] private Button _browseButton;
+        [BindView(Resource.Id.main_message)] private TextView _mainMessage;
+        [BindView(Resource.Id.hint_message)] private TextView _hintMessage;
 #pragma warning restore 0649
 
 
@@ -58,18 +62,19 @@ namespace Steepshot.Fragment
             if (!IsInitialized)
             {
                 base.OnViewCreated(view, savedInstanceState);
-
+                
                 Presenter.SourceChanged += PresenterSourceChanged;
                 _adapter = new FeedAdapter<FeedPresenter>(Context, Presenter);
                 _adapter.PostAction += PostAction;
                 _adapter.TagAction += TagAction;
-
+                
                 _postPagerAdapter = new PostPagerAdapter<FeedPresenter>(Context, Presenter);
                 _postPagerAdapter.PostAction += PostAction;
                 _postPagerAdapter.TagAction += TagAction;
                 _postPagerAdapter.CloseAction += CloseAction;
-
+                
                 _logo.Click += OnLogoClick;
+                _browseButton.Click += GoToBrowseButtonClick;
                 _toolbar.OffsetChanged += OnToolbarOffsetChanged;
 
                 _scrollListner = new ScrollListener();
@@ -92,6 +97,10 @@ namespace Steepshot.Fragment
 
                 _emptyQueryLabel.Typeface = Style.Light;
                 _emptyQueryLabel.Text = AppSettings.LocalizationManager.GetText(LocalizationKeys.EmptyCategory);
+
+                _mainMessage.Text = AppSettings.LocalizationManager.GetText(LocalizationKeys.Greeting);
+                _hintMessage.Text = AppSettings.LocalizationManager.GetText(LocalizationKeys.EmptyFeedHint);
+                _browseButton.Text = AppSettings.LocalizationManager.GetText(LocalizationKeys.GoToBrowse);
 
                 LoadPosts();
             }
@@ -189,8 +198,18 @@ namespace Steepshot.Fragment
 
             _bar.Visibility = ViewStates.Gone;
             _refresher.Refreshing = false;
+            
+            _feedContainer.Visibility = ViewStates.Invisible;
 
-            _emptyQueryLabel.Visibility = Presenter.Count > 0 ? ViewStates.Invisible : ViewStates.Visible;
+            if (Presenter.Count == 0)
+            {
+                _feedContainer.Visibility = ViewStates.Visible;
+            }
+        }
+
+        private void GoToBrowseButtonClick(object sender, EventArgs e)
+        {
+            ((RootActivity)Activity).SelectTab(1);
         }
 
         private void PhotoClick(Post post)

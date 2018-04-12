@@ -276,6 +276,8 @@ namespace Steepshot.iOS.Views
                 return;
 
             ShowAlert(error);
+            if (error == null)
+                ((MainTabBarController)TabBarController)?.UpdateProfile();
         }
 
         private void GoBack(object sender, EventArgs e)
@@ -325,6 +327,8 @@ namespace Steepshot.iOS.Views
 
             var error = await _presenter.TryFlag(post);
             ShowAlert(error);
+            if (error == null)
+                ((MainTabBarController)TabBarController)?.UpdateProfile();
         }
 
         private void SwitchLayout(object sender, EventArgs e)
@@ -355,37 +359,45 @@ namespace Steepshot.iOS.Views
 
         private async Task GetPosts(bool shouldStartAnimating = true, bool clearOld = false)
         {
-            if (shouldStartAnimating)
-                activityIndicator.StartAnimating();
-            noFeedLabel.Hidden = true;
-
-            if (clearOld)
-            {
-                _sliderGridDelegate.ClearPosition();
-                _gridDelegate.ClearPosition();
-                _presenter.Clear();
-            }
-
             ErrorBase error;
-            if (CurrentPostCategory == null)
-                error = await _presenter.TryLoadNextTopPosts();
-            else
+            do
             {
-                _presenter.Tag = CurrentPostCategory;
-                error = await _presenter.TryGetSearchedPosts();
-            }
+                if (shouldStartAnimating)
+                {
+                    activityIndicator.StartAnimating();
+                    _refreshControl.EndRefreshing();
+                }
+                else
+                    activityIndicator.StopAnimating();
 
-            if (error is CanceledError)
-                return;
+                noFeedLabel.Hidden = true;
 
-            if (_refreshControl.Refreshing)
-            {
-                _refreshControl.EndRefreshing();
-                _isFeedRefreshing = false;
-            }
-            else
-                activityIndicator.StopAnimating();
+                if (clearOld)
+                {
+                    _sliderGridDelegate.ClearPosition();
+                    _gridDelegate.ClearPosition();
+                    _presenter.Clear();
+                }
 
+                if (CurrentPostCategory == null)
+                    error = await _presenter.TryLoadNextTopPosts();
+                else
+                {
+                    _presenter.Tag = CurrentPostCategory;
+                    error = await _presenter.TryGetSearchedPosts();
+                }
+
+                if (error is CanceledError)
+                    return;
+
+                if (_refreshControl.Refreshing)
+                {
+                    _refreshControl.EndRefreshing();
+                    _isFeedRefreshing = false;
+                }
+                else
+                    activityIndicator.StopAnimating();
+            } while (error is RequestError);
             ShowAlert(error);
         }
 
