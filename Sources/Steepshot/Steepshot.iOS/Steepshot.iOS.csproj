@@ -386,6 +386,7 @@
     <Compile Include="ViewSources\PhotoGalleryViewSource.cs" />
     <Compile Include="Cells\PhotoGalleryCell.cs" />
     <Compile Include="Services\AVPlayerService.cs" />
+    <Compile Include="Services\VolumeButtonHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <BundleResource Include="Resources\ic_photo_holder.png" />

@@ -99,6 +99,12 @@ namespace Steepshot.iOS.Cells
         {
             _contentView = contentView;
 
+            Services.VolumeButtonHandler.Instance.ButtonClicked += (object sender, EventArgs e) =>
+            {
+                if (avPlayer != null)
+                    avPlayer.Muted = false;
+            };
+
             _moreButton = new UIButton();
             _moreButton.Frame = new CGRect(_contentView.Frame.Width - moreButtonWidth, 0, moreButtonWidth, likeButtonWidthConst);
             _moreButton.SetImage(UIImage.FromBundle("ic_more"), UIControlState.Normal);
@@ -359,6 +365,7 @@ namespace Steepshot.iOS.Cells
                         if (!isPlaying)
                         {
                             playButton.SetImage(new UIImage("ic_stop.png"), UIControlState.Normal);
+                            player.Muted = true;
                             player.Play();
                             isPlaying = true;
                         }
@@ -379,6 +386,7 @@ namespace Steepshot.iOS.Cells
                         activePlayButton = playButton;
 
                         player.Play();
+                        player.Muted = true;
                         isPlaying = true;
                         playButton.SetImage(new UIImage("ic_stop.png"), UIControlState.Normal);
                     }

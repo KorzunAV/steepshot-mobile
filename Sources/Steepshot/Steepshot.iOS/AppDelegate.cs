@@ -49,6 +49,7 @@ namespace Steepshot.iOS
             AppSettings.Container = builder.Build();
 
             GAService.Instance.InitializeGAService();
+            VolumeButtonHandler.Instance.Start();
 
             AppDomain.CurrentDomain.UnhandledException += (object sender, UnhandledExceptionEventArgs e) =>
             {
