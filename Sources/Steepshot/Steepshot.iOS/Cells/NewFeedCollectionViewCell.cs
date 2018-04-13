@@ -15,7 +15,6 @@ using Steepshot.Core.Presenters;
 using Steepshot.Core.Localization;
 using Steepshot.Core.Utils;
 using AVFoundation;
-using AVKit;
 
 namespace Steepshot.iOS.Cells
 {
@@ -59,6 +58,9 @@ namespace Steepshot.iOS.Cells
         private TTTAttributedLabel _attributedLabel;
         private UILabel _comments;
         private UIView _bottomSeparator;
+        private static AVPlayer avPlayer;
+        private static UIButton activePlayButton;
+        private static bool isPlaying;
 
         private IScheduledWork _scheduledWorkAvatar;
         private IScheduledWork[] _scheduledWorkBody = new IScheduledWork[0];
@@ -126,7 +128,8 @@ namespace Steepshot.iOS.Cells
             _photoScroll.ShowsHorizontalScrollIndicator = false;
             _photoScroll.Bounces = false;
             _photoScroll.PagingEnabled = true;
-            _photoScroll.Scrolled+= (sender, e) => {
+            _photoScroll.Scrolled += (sender, e) =>
+            {
                 var pageWidth = _photoScroll.Frame.Size.Width;
                 _pageControl.CurrentPage = (int)Math.Floor((_photoScroll.ContentOffset.X - pageWidth / 2) / pageWidth) + 1;
             };
@@ -300,6 +303,8 @@ namespace Steepshot.iOS.Cells
             _bodyImage = new UIImageView[_currentPost.Media.Length];
             for (int i = 0; i < _currentPost.Media.Length; i++)
             {
+                // TODO: Check content type
+
                 //_bodyImage[i] = new UIImageView();
                 //_bodyImage[i].ClipsToBounds = true;
                 //_bodyImage[i].UserInteractionEnabled = true;
@@ -317,7 +322,6 @@ namespace Steepshot.iOS.Cells
                 //                            })*/
                 //                              .Into(_bodyImage[i]);
 
-                // "https://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4"
                 AVPlayer player;
                 AVPlayerLayer playerLayer;
                 AVAsset asset;
@@ -330,7 +334,8 @@ namespace Steepshot.iOS.Cells
                 player = new AVPlayer(playerItem);
 
                 playerLayer = AVPlayerLayer.FromPlayer(player);
-                playerLayer.Frame = new CGRect(UIScreen.MainScreen.Bounds.Width * i, 0, UIScreen.MainScreen.Bounds.Width, variables.PhotoHeight);
+                playerLayer.Frame = new CGRect(UIScreen.MainScreen.Bounds.Width * i, 0, UIScreen.MainScreen.Bounds.Width, 200);
+                playerLayer.BackgroundColor = UIColor.Clear.CGColor;
                 _photoScroll.Layer.AddSublayer(playerLayer);
 
                 NSNotificationCenter.DefaultCenter.AddObserver(AVPlayerItem.DidPlayToEndTimeNotification, (obj) =>
@@ -339,6 +344,49 @@ namespace Steepshot.iOS.Cells
                     player.Play();
                     obj.Dispose();
                 }, player.CurrentItem);
+
+                player.Muted = true;
+                var playButtonMargins = 42;
+
+                var playButton = new UIButton();
+                playButton.Frame = new CGRect(_contentView.Frame.Width - playButtonMargins, variables.PhotoHeight - playButtonMargins, 32, 32);
+                playButton.SetImage(new UIImage("ic_play.png"), UIControlState.Normal);
+
+                playButton.TouchDown += (object sender, EventArgs e) =>
+                {
+                    if (player == avPlayer)
+                    {
+                        if (!isPlaying)
+                        {
+                            playButton.SetImage(new UIImage("ic_stop.png"), UIControlState.Normal);
+                            player.Play();
+                            isPlaying = true;
+                        }
+                        else
+                        {
+                            playButton.SetImage(new UIImage("ic_play.png"), UIControlState.Normal);
+                            player.Pause();
+                            isPlaying = false;
+                        }
+                    }
+                    else
+                    {
+                        if (avPlayer != null)
+                            avPlayer.Pause();
+                        avPlayer = player;
+                        if (activePlayButton != null)
+                            activePlayButton.SetImage(new UIImage("ic_play.png"), UIControlState.Normal);
+                        activePlayButton = playButton;
+
+                        player.Play();
+                        isPlaying = true;
+                        playButton.SetImage(new UIImage("ic_stop.png"), UIControlState.Normal);
+                    }
+
+                    activePlayButton = playButton;
+                };
+
+                _photoScroll.AddSubview(playButton);
             }
             if (_currentPost.Media.Length > 1)
             {
@@ -371,9 +419,9 @@ namespace Steepshot.iOS.Cells
                                                   .Into(_firstLikerImage);
                 likesMargin = _firstLikerImage.Frame.Right + likesMarginConst;
             }
-            else if(_firstLikerImage != null)
+            else if (_firstLikerImage != null)
                 _firstLikerImage.Hidden = true;
-            
+
             if (_currentPost.TopLikersAvatars.Count() >= 2 && !string.IsNullOrEmpty(_currentPost.TopLikersAvatars[1]))
             {
                 _secondLikerImage?.RemoveFromSuperview();
@@ -395,7 +443,7 @@ namespace Steepshot.iOS.Cells
                                                     .Into(_secondLikerImage);
                 likesMargin = _secondLikerImage.Frame.Right + likesMarginConst;
             }
-            else if(_secondLikerImage != null)
+            else if (_secondLikerImage != null)
                 _secondLikerImage.Hidden = true;
 
             if (_currentPost.TopLikersAvatars.Count() >= 3 && !string.IsNullOrEmpty(_currentPost.TopLikersAvatars[2]))
