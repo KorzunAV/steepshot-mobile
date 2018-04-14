@@ -294,8 +294,8 @@ namespace Steepshot.iOS.Cells
             _author.Text = _currentPost.Author;
             _timestamp.Text = _currentPost.Created.ToPostTime();
 
-            _photoScroll.Frame = new CGRect(0, _avatarImage.Frame.Bottom + 20, UIScreen.MainScreen.Bounds.Width, variables.PhotoHeight);
-            _photoScroll.ContentSize = new CGSize(UIScreen.MainScreen.Bounds.Width * _currentPost.Media.Length, variables.PhotoHeight);
+            _photoScroll.Frame = new CGRect(0, _avatarImage.Frame.Bottom + 20, UIScreen.MainScreen.Bounds.Width, 190); //variables.PhotoHeight
+            _photoScroll.ContentSize = new CGSize(UIScreen.MainScreen.Bounds.Width * _currentPost.Media.Length, 190); //variables.PhotoHeight
 
             foreach (var subview in _photoScroll.Subviews)
                 subview.RemoveFromSuperview();
@@ -328,6 +328,14 @@ namespace Steepshot.iOS.Cells
                 //                            })*/
                 //                              .Into(_bodyImage[i]);
 
+                // TODO: for tests
+                if (avPlayer != null)
+                {
+                    avPlayer.Pause();
+                    avPlayer.Muted = true;
+                    activePlayButton?.SetImage(new UIImage("ic_play.png"), UIControlState.Normal);
+                }
+
                 AVPlayer player;
                 AVPlayerLayer playerLayer;
                 AVAsset asset;
@@ -340,7 +348,7 @@ namespace Steepshot.iOS.Cells
                 player = new AVPlayer(playerItem);
 
                 playerLayer = AVPlayerLayer.FromPlayer(player);
-                playerLayer.Frame = new CGRect(UIScreen.MainScreen.Bounds.Width * i, 0, UIScreen.MainScreen.Bounds.Width, 200);
+                playerLayer.Frame = new CGRect(UIScreen.MainScreen.Bounds.Width * i, 0, UIScreen.MainScreen.Bounds.Width, 190);
                 playerLayer.BackgroundColor = UIColor.Clear.CGColor;
                 _photoScroll.Layer.AddSublayer(playerLayer);
 
@@ -355,7 +363,7 @@ namespace Steepshot.iOS.Cells
                 var playButtonMargins = 42;
 
                 var playButton = new UIButton();
-                playButton.Frame = new CGRect(_contentView.Frame.Width - playButtonMargins, variables.PhotoHeight - playButtonMargins, 32, 32);
+                playButton.Frame = new CGRect(_contentView.Frame.Width - playButtonMargins, 190 - playButtonMargins, 32, 32);
                 playButton.SetImage(new UIImage("ic_play.png"), UIControlState.Normal);
 
                 playButton.TouchDown += (object sender, EventArgs e) =>
@@ -365,14 +373,14 @@ namespace Steepshot.iOS.Cells
                         if (!isPlaying)
                         {
                             playButton.SetImage(new UIImage("ic_stop.png"), UIControlState.Normal);
-                            player.Muted = true;
-                            player.Play();
+                            avPlayer.Muted = true;
+                            avPlayer.Play();
                             isPlaying = true;
                         }
                         else
                         {
                             playButton.SetImage(new UIImage("ic_play.png"), UIControlState.Normal);
-                            player.Pause();
+                            avPlayer.Pause();
                             isPlaying = false;
                         }
                     }
@@ -385,8 +393,8 @@ namespace Steepshot.iOS.Cells
                             activePlayButton.SetImage(new UIImage("ic_play.png"), UIControlState.Normal);
                         activePlayButton = playButton;
 
-                        player.Play();
-                        player.Muted = true;
+                        avPlayer.Play();
+                        avPlayer.Muted = true;
                         isPlaying = true;
                         playButton.SetImage(new UIImage("ic_stop.png"), UIControlState.Normal);
                     }
